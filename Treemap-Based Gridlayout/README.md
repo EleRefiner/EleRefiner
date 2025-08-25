@@ -38,17 +38,16 @@ If you encounter issues while compiling, please try adjusting the line endings t
 
 Datasets
 ----------
-Please download datasets from [google drive](TODO) and move the directory to datasets/.
+Please download datasets from [google drive](https://drive.google.com/drive/folders/1kzhPbK1bI_i9RGlHNMs4MHYsgfIbF5xW?usp=sharing) and move the directory to datasets/.
 
 For example, datasets/infographic/.
 
-Then unzip the .zip files in the folder, and run calc_conf.py and multiload.py (if they exist) to preprocess.
+Then unzip the .zip files in the folder.
 
 For your dataset, please:
-1. prepare the xxx.json, xxx_features.npy, xxx_labels.npy, xxx_labels_gt.npy, xxx_predict_confs.npy and xxx_images folder, xxx can be the name of your dataset. The details of these files can be seen in README.md in [google drive](TODO). 
-2. Then run calc_conf.py to preprocess confidence like existing datasets.
-3. For large dataset, please run multiload.py to preprocess incremental loading.
-4. Add your dataset to function "load" of LabelHierarchy in application/data/LabelHierarchy.py.
+1. prepare the xxx_features.npy and xxx_images folder.
+2. Then run get_hier("xxx") in rebuild_gridlayout.py to preprocess like existing datasets.
+3. Add your dataset to function "load" of LabelHierarchy in application/data/LabelHierarchy.py.
 
 Run
 ----------

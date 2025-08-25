@@ -34,7 +34,7 @@ If you encounter issues while compiling, please try adjusting the line endings t
 
 Datasets
 ----------
-Please download datasets from [google drive](TODO) and move the directory to backend/data/datasets/.
+Please download datasets from [google drive](https://drive.google.com/drive/folders/1jF78HZ7N9InjYdQcnqcn698wLIqqC93K?usp=sharing) and move the directory to backend/data/datasets/.
 
 For example, backend/data/datasets/infographic/.
 
@@ -48,7 +48,7 @@ cd data
 python dataControl_new2.py
 ```
 
-For your dataset, please change the "# TO FILL" content in this repo according to your dataset.
+For your dataset, please prepare your annotations.json and pred.bbox.json and change the "# TO FILL" content in this repo according to your dataset.
 
 Run
 ----------
