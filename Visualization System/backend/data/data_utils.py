@@ -13,13 +13,13 @@ import pickle
 from scene_tree.SAM.sam import get_mask_predictor, sam_get_mask_shape, sam_pred_image
 import time
 
-# TO FILL
-conf_thres = [0.3] * len(category_dict)
-min_thres_ratio = 1/3
-category_dict = { 0: "text", 1: "axis", 2: "marks", 3: "legend", 4: "visual_element", 5: "chart"} # TO FILL
-category_dict2 = { 0: "text", 1: "axis", 2: "marks", 3: "legend", 4: "visual_element", 5: "chart"} # TO FILL
-image_pre = "YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
+
+min_thres_ratio = 1/3 # TO FILL
+category_dict = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
+category_dict2 = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
+image_pre = "/YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
 image_pre2 = "YOUR/PUBLIC/IMAGE/FOLDER/PATH/"  # TO FILL
+conf_thres = [0.3] * len(category_dict)
 
 def mergeCandidateText(candidate_without_text, text, image_list, path, use_mask=False):
 

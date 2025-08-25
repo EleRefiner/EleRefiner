@@ -8,7 +8,7 @@ import random
 import os
 
 use_ratio = 0.2
-category_names = { 0: "text", 1: "axis", 2: "marks", 3: "legend", 4: "visual_element", 5: "chart"} # TO FILL
+category_dict = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
 
 
 def PrepareData(input_json_path, dist_mtx_path, train_ratio=0.15, test_ratio=0.03, with_id=False, with_info=False, info_path=None):

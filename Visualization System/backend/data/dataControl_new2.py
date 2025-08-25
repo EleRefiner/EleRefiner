@@ -13,8 +13,8 @@ import random
 
 part_cnt = 10
 
-category_dict2 = { 0: "text", 1: "axis", 2: "marks", 3: "legend", 4: "visual_element", 5: "chart"} # TO FILL
-image_pre = "YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
+category_dict2 = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
+image_pre = "/YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
 similarity_scale_dict = {i: 1.0 for i in range(len(category_dict2))}
 
 class DataControl:
@@ -1231,4 +1231,4 @@ if __name__ == "__main__":
         arg = int(args[0])
 
     data_control = DataControl(False)
-    data_control.load_data("datasets/YOUR_DATASET", need_feature=True, model="dreamsim", need_hierarchy_feature=True, part=arg, before_part=False)  # TO FILL
+    data_control.load_data("datasets/infographic", need_feature=True, model="dreamsim", need_hierarchy_feature=True, part=arg, before_part=False)  # TO FILL

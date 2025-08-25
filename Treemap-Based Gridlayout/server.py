@@ -7,21 +7,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 port = Port((30, 30))
-# port.load_dataset('infographic_1028_annotated') #'MNIST''cifar'
-# port.load_dataset('test')
-# port.load_dataset('new_dataset')
-# port.load_dataset('mixed_10000')
-# port.load_dataset('mixed_10000_dreamsim')
-# port.load_dataset('mixed_10000_shuffle')
-# port.load_dataset('mixed_10000_case2(chart=69.0)')
-
-# port.load_dataset('mixed_10000_fixed')
-# port.load_dataset('mixed_10000_fixed_case2(chart=69.0)')
-# port.load_dataset('mixed_10000_fixed_done(chart=69.0)')
-# port.load_dataset('lizhen_QA')
-# port.load_dataset('ChartQAPro_text')
-# port.load_dataset('ChartQAPro_text2')
-port.load_dataset('ChartQAPro_QA')
+port.load_dataset('infographic')
 
 @app.route("/api/metadata", methods=["POST"])
 def get_metadata():
