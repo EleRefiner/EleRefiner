@@ -10,11 +10,11 @@ This method is best used in a Windows or Mac environment; otherwise, the paralle
 
 Treemap-Based Gridlayout
 ----------
-Please come to /Treemap-Based Gridlayout, and follow the README.md in subfolders to setup and run the code.
+Please come to [Treemap-Based Gridlayout](./Treemap-Based%20Gridlayout), and follow the README.md in subfolders to setup and run the code.
 
 Visualization System
 ----------
-Please come to /Visualization System, and follow the README.md in subfolders to setup and run the code.
+Please come to [Visualization System](./Visualization%20System), and follow the README.md in subfolders to setup and run the code.
 
 ## Contact
 If you have any problem about our code, feel free to contact
