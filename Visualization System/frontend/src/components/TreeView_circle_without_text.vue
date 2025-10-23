@@ -198,7 +198,9 @@ export default {
                 score_avg += that.boxes[data.child_index[i]].score;
             }
             data.score = score_avg / Math.max(1, data.child_index.length);
-            if(data.class != "group") data.class = that.boxes[data.child_index[0]].class;
+            if(data.class != "group") {
+                data.class = that.boxes[data.child_index[0]].class;
+            }
         },
         scoreTmpEdit: function(id, scale) {
             let that = this;
@@ -2143,7 +2145,7 @@ export default {
             id_cnt = 10000;
             function dfs(hierarchy, deep) {
                 if(typeof hierarchy === 'number') {
-                    if(boxes[hierarchy].class == "text")return null;
+                    if(["text", "Annotation", "Title", "Source"].includes(boxes[hierarchy].class))return null;
 
                     boxes[hierarchy].deep = deep;
                     let category_cnt = {};
@@ -2164,7 +2166,7 @@ export default {
                     //     result["influence"] = item["influence_within"][hierarchy].length/Math.max(max_influence, 1);
                     // }
                     // console.log("?", that.$parent.$parent.selectedInfluence, hierarchy);
-                    result["influence"] = that.$parent.$parent.selectedInfluence[hierarchy].quantile;
+                    result["influence"] = that.$parent.$parent.selectedInfluence[hierarchy]?that.$parent.$parent.selectedInfluence[hierarchy].quantile:0;
                     return result;
                 }
                 id_cnt += 1;
@@ -2296,11 +2298,11 @@ export default {
             let legend_size = 20;
             legend_size = min(min(20, color_legend_svgsize.height/3), color_legend_svgsize.width/17);
 
-            for(let i=0;i<that.categories.length;i++) {
-                that.categories[i].tree_y = i/(that.categories.length-1)*(color_legend_svgsize.height - stroke_width - legend_size);
+            for(let i=0;i<that.categories_super.length;i++) {
+                that.categories_super[i].tree_y = i/(that.categories_super.length-1)*(color_legend_svgsize.height - stroke_width - legend_size);
             }
             const legend = that.color_legend_svg.selectAll(".legend")
-                .data(that.categories)
+                .data(that.categories_super)
                 .enter().append("g")
                 .attr("class", "legend")
                 .attr("transform", (d, i) => `translate(0, ${d.tree_y})`);
@@ -2679,6 +2681,8 @@ export default {
 
         this.svg_back_g = this.svg.select(".tree-back-g");
 
+        this.categories_super = this.$parent.$parent.categories_super;
+        this.categories_super2 = this.$parent.$parent.categories_super2;
         this.categories = this.$parent.$parent.categories;
         this.categories2 = this.$parent.$parent.categories2;
 

@@ -550,7 +550,7 @@ export default {
             const box_back_g = d3.select('#box-back-group');
             const that = this;
             const boxes = that.boxes;
-            boxes.sort((a, b) => d3.ascending(a.width*a.height, b.width*b.height));
+            boxes.sort((a, b) => d3.ascending(a.width*a.height*100+a.id, b.width*b.height*100+b.id));
             let allBackRects = box_back_g.selectAll('g.imageback').data(boxes, (d) => d.id);
 
             
@@ -571,6 +571,7 @@ export default {
                 })
                 .transition()
                 .duration(200)
+                .attr("bid", d => d.id)
                 .attr("opacity", function(d) {
                     if(d.unselected) {
                         // TODO
@@ -627,14 +628,15 @@ export default {
             const box_g = d3.select('#box-group');
             const that = this;
             const boxes = that.boxes;
-            const allRects = box_g.selectAll('g.imagebox');
+            boxes.sort((a, b) => d3.ascending(a.width*a.height*100+a.id, b.width*b.height*100+b.id));
+            const allRects = box_g.selectAll('g.imagebox').data(boxes, (d) => d.id);
             const allDropdown = d3.select("#image-dropdown").selectAll(".dropdown-group");
 
             allDropdown
-                // .style("left", d => `${d.x + d.width/2 - 152/2}px`)
+                // .style("left", d => `${d.x + d.width/2 - 172/2}px`)
                 // .style("bottom", d => `calc(100% - ${d.y - 10}px`)
                 .style("left", d => {
-                    let width = 152;
+                    let width = 172;
                     let left = d.x + d.width/2 - width/2;
                     left = Math.max(left, 0);
                     left = Math.min(left, that.svgsize.width-width);
@@ -711,7 +713,9 @@ export default {
             allRects
                 .attr('transform', function(d) {
                     return 'translate(' + d.x + ',' + d.y + ')';
-                });
+                })
+                .lower();
+            // console.log("??", allRects)
 
             allRects
                 .attr("visibility", function(d) {
@@ -730,6 +734,7 @@ export default {
                 })
                 .transition()
                 .duration(200)
+                .attr("bid", d => d.id)
                 .attr("opacity", function(d) {
                     if(d.unselected) {
                         // TODO
@@ -803,10 +808,10 @@ export default {
             const allDropdown = d3.select("#image-dropdown").selectAll(".groupdropdown-group");
 
             allDropdown
-                // .style("left", d => `${d.x + d.width/2 - 152/2}px`)
+                // .style("left", d => `${d.x + d.width/2 - 172/2}px`)
                 // .style("bottom", d => `calc(100% - ${d.y - 10}px`)
                 .style("left", d => {
-                    let width = 152;
+                    let width = 172;
                     let left = d.x + d.width/2 - width/2;
                     left = Math.max(left, 0);
                     left = Math.min(left, that.svgsize.width-width);
@@ -1430,6 +1435,7 @@ export default {
             let that = this;
 
             let boxes = that.boxes;
+            boxes.sort((a, b) => d3.ascending(a.width*a.height*100+a.id, b.width*b.height*100+b.id));
             let back_rects = box_back_g.selectAll('g.imageback').data(boxes, (d) => d.id);
             back_rects.exit().remove();
 
@@ -1470,6 +1476,7 @@ export default {
             let that = this;
 
             let boxes = that.boxes;
+            boxes.sort((a, b) => d3.ascending(a.width*a.height*100+a.id, b.width*b.height*100+b.id));
             let rects = box_g.selectAll('g.imagebox').data(boxes, (d) => d.id);
             rects.exit().remove();
 
@@ -1529,10 +1536,10 @@ export default {
                 .append("div")
                 .attr("class", "dropdown-group")
                 .style("position", "absolute")
-                // .style("left", d => `${d.x + d.width/2 - 152/2}px`)
+                // .style("left", d => `${d.x + d.width/2 - 172/2}px`)
                 // .style("bottom", d => `calc(100% - ${d.y - 10}px`)
                 .style("left", d => {
-                    let width = 152;
+                    let width = 172;
                     let left = d.x + d.width/2 - width/2;
                     left = Math.max(left, 0);
                     left = Math.min(left, that.svgsize.width-width);
@@ -1627,14 +1634,14 @@ export default {
             newRects
                 .append('g')
                 .classed('circles', true)
-                .attr("visibility", (d) => {
-                    if(!d.ispred)return "visible";
-                    return "hidden";
-                })
-                // .attr("opacity", (d) => {
-                //     if(!d.ispred)return 1;
-                //     return 0;
+                // .attr("visibility", (d) => {
+                //     if(!d.ispred)return "visible";
+                //     return "hidden";
                 // })
+                .attr("opacity", (d) => {
+                    if(!d.ispred)return 1;
+                    return 0;
+                })
                 .each(function() {
                     // eslint-disable-next-line no-invalid-this
                     const circleG = d3.select(this);
@@ -1742,10 +1749,10 @@ export default {
                 .append("div")
                 .attr("class", "groupdropdown-group")
                 .style("position", "absolute")
-                // .style("left", d => `${d.x + d.width/2 - 152/2}px`)
+                // .style("left", d => `${d.x + d.width/2 - 172/2}px`)
                 // .style("bottom", d => `calc(100% - ${d.y - 10}px`)
                 .style("left", d => {
-                    let width = 152;
+                    let width = 172;
                     let left = d.x + d.width/2 - width/2;
                     left = Math.max(left, 0);
                     left = Math.min(left, that.svgsize.width-width);
@@ -2121,6 +2128,8 @@ export default {
         let tmp = document.getElementById('svg');
         // tmp.classList.add('drag-cursor');
 
+        this.categories_super = this.$parent.categories_super;
+        this.categories_super2 = this.$parent.categories_super2;
         this.categories = this.$parent.categories;
         this.categories2 = this.$parent.categories2;
 
@@ -2140,12 +2149,13 @@ export default {
         let legend_size = 20;
         legend_size = min(20, legend_svgsize.width/27);
 
-        for(let i=0;i<this.categories.length;i++) {
-            this.categories[i].image_x = i/(this.categories.length-1)*(legend_svgsize.width - stroke_width - legend_size*8);
-            // this.categories[i].image_x = i/(this.categories.length-1)*(legend_svgsize.width - stroke_width - legend_size*4);
+        for(let i=0;i<this.categories_super2.length;i++) {
+            // this.categories_super2[i].image_x = i/(this.categories_super2.length-1)*(legend_svgsize.width - stroke_width - legend_size*8);
+            this.categories_super2[i].image_x = i/(this.categories_super2.length-1)*(legend_svgsize.width - stroke_width - legend_size*(2+this.categories_super2[0].text.length*2/3));
+            // this.categories_super2[i].image_x = i/(this.categories_super2.length-1)*(legend_svgsize.width - stroke_width - legend_size*4);
         }
         const legend = legend_svg.selectAll(".legend")
-            .data(this.categories)
+            .data(this.categories_super2)
             .enter().append("g")
             .attr("class", "legend")
             .attr("transform", (d, i) => `translate(${d.image_x}, 0)`);
@@ -2385,7 +2395,7 @@ export default {
 <style>
 
 .image-dropdown-title{
-    width: 152px;
+    width: 172px;
     height: 29px;
     border-radius: 5px 5px 0 0;
     background: #000;
@@ -2396,7 +2406,7 @@ export default {
 }
 
 .image-dropdown-title2{
-    width: 152px;
+    width: 172px;
     height: 29px;
     border-radius: 5px 5px 5px 5px;
     background: #000;
@@ -2407,7 +2417,7 @@ export default {
 }
 
 .image-dropdown-body{
-    width: 152px;
+    width: 172px;
     height: 41px;
     border-radius: 0 0 5px 5px;
     background: #FFF;

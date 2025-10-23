@@ -51,7 +51,7 @@
                             <p> {{items_len?items_len:"none"}} </p>
                         </div>
                         <div class="description-text">
-                            <p> infographic charts and their layout templates </p>
+                            <p> infographic charts and their clusters </p>
                         </div>
                     </div>
                 </div>
@@ -74,8 +74,8 @@ export default {
     props: ['items_len'],
     data: function() {
         return {
-            selectedOption: 'Infographic Templates',
-            options: ['Infographic Templates', "?"],
+            selectedOption: 'Infographic',
+            options: ['Infographic', "?"],
         };
     },
     methods: {
