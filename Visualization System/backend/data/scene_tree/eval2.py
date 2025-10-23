@@ -105,8 +105,10 @@ def getShape(obj, recalc=True, shape_store=None):
 
     if obj.type != "group":
         if not hasattr(obj, 'shape'):
-            obj.shape = shapely.geometry.box(obj.box[0], obj.box[1], obj.box[2], obj.box[3])
-            # obj.shape = obj.mask_shape
+            if obj.type in ["mark", "area-under-line_mark", "pie_mark", "treemap_mark"]:
+                obj.shape = obj.mask_shape
+            else:
+                obj.shape = shapely.geometry.box(obj.box[0], obj.box[1], obj.box[2], obj.box[3])
         if shape_store is not None:
             shape_store[tp] = obj.shape
         return obj.shape
@@ -141,7 +143,7 @@ def getInnerShape(obj, recalc=True, shape_store=None):
         # area_list.append(tmp_obj.shape.area)
         area_list.append((tmp_obj.box[2]-tmp_obj.box[0])*(tmp_obj.box[3]-tmp_obj.box[1]))
         if tmp_obj.type == "group":
-            area_list[-1] *= 0.95
+            area_list[-1] *= 0
         min_x = min(min_x, tmp_obj.box[0])
         min_y = min(min_y, tmp_obj.box[1])
         max_x = max(max_x, tmp_obj.box[2])
@@ -610,8 +612,7 @@ def getScore(obj, top=True, weight_store=None, match_store=None, shape_store=Non
         # score_list[4] += score_similar * cnt_similar
         # score_list[5] += cnt_similar
     else:
-        # if (obj.type == "non-data" or obj.type == "data") and (outer_list is not None and obj.id not in outer_list):
-        if (obj.type == "chart") and (outer_list is not None and obj.id not in outer_list):
+        if ((obj.type == "chart") or ("mark" in obj.type) or ("sub-element" == obj.type)) and (outer_list is not None and obj.id not in outer_list):
             # print(obj.type, "added", obj.id, outer_list)
             score_list[1] += obj.shape.area 
 
@@ -638,10 +639,8 @@ def getFullScore(obj, top=True, weight_store=None, match_store=None, shape_store
 
 
 def calcOneScore(score_cover, score_overlap, score_similar):
-    # return 1 * score_cover - 20 * score_overlap + score_similar / 3
+    # return 0.2 * score_cover - 10 * score_overlap + score_similar / 3
     return 0.2 * score_cover - 10 * score_overlap + score_similar / 3
-    # return 0.1 * score_cover - 30 * score_overlap + score_similar / 3
-    # return 0.02 * score_cover - 0.02 * score_overlap + score_similar / 3
 
 
 def calcOneScoreFull(full_score):

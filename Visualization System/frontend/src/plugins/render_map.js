@@ -112,6 +112,7 @@ const MapRender = function(parent) {
                 "pairs": []
             }
         }
+        // map_info["pairs"] = map_info["pairs"].slice(0, 6)
 
         console.log("map_info", map_info);
         that.update_info_from_parent();
@@ -132,7 +133,7 @@ const MapRender = function(parent) {
         for(let pair of map_info.pairs) {
             // targets.push({"x": pair.target.x+map_info.source.width/2, "y": pair.target.y+map_info.source.width/2, "flow": 1+Math.random()*3.5});
             // targets.push({"x": pair.target.x+map_info.source.width/2, "y": pair.target.y+map_info.source.width/2, "flow": Math.min(5, pair.scores.length/3)});
-            targets.push({"x": pair.target.x+map_info.source.width/2, "y": pair.target.y+map_info.source.width/2, "flow": Math.max(1, Math.min(5, pair.flow/scale))});
+            targets.push({"x": pair.target.x+map_info.source.width/2, "y": pair.target.y+map_info.source.width/2, "flow": 1*Math.max(1, Math.min(5, pair.flow/scale))});
         }
         let paths = mergeAll(source, targets, Math.PI/3);
         for(let i=0;i<map_info.pairs.length;i++){
@@ -310,8 +311,8 @@ const MapRender = function(parent) {
         let box_plots = that.box_g.selectAll(".box-plot")
             .data(map_info.pairs, d => { return String(d.source.sample_id)+"&"+String(d.target.sample_id)+"-"+String(Math.random()); });
 
-        let box_width = 30;
-        let box_height = 30;
+        let box_width = 30*1;
+        let box_height = 30*1;
 
         box_plots.exit()
             .transition()

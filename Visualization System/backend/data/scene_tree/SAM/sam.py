@@ -125,12 +125,12 @@ def mask_to_polygons(mask, simplify=True):
     if len(polygons) > 1:
         shape = MultiPolygon(polygons).buffer(0)
         if simplify:
-            shape = shapely.simplify(shape, size/3).buffer(0)
+            shape = shapely.simplify(shape, size/4).buffer(0)
         return shape
     elif len(polygons) == 1:
         shape = polygons[0].buffer(0)
         if simplify:
-            shape = shapely.simplify(shape, size/3).buffer(0)
+            shape = shapely.simplify(shape, size/4).buffer(0)
         return shape
     else:
         return None

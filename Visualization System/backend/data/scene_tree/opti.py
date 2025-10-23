@@ -23,7 +23,6 @@ def non_max_suppression(items, scores, iou_threshold):
 
         remaining_idx_list = []
         for i, item in enumerate(remaining_items):
-            # TODO check the nms strategy here
             if current_item["type"] != item["type"] or iou(current_item["box"], item["box"]) < iou_threshold:
                 remaining_idx_list.append(remaining_idxs[i])
 
@@ -124,7 +123,7 @@ def original(ori_select, full_dict_list, full_conf_list, init_subset=None, image
 
 
 def hill_climbing(ori_select, full_dict_list, full_conf_list, forbid_list=None, step=1, max_it_cnt=10000, best_cnt=3, init_subset=None, image=None,
-                  scale=1, line=3, padding=30, store=None, award_list=None, full_conf_list2=None, save_root='result/images/', shape_dict=None, img_shape=None, tot_time=None):
+                  scale=1, line=3, padding=30, store=None, award_list=None, full_conf_list2=None, save_root='result/images/', shape_dict=None, img_shape=None, tot_time=None, only_nms=False):
     start = time.time()
 
     if award_list is None:
@@ -153,7 +152,32 @@ def hill_climbing(ori_select, full_dict_list, full_conf_list, forbid_list=None, 
         current_subset = ori_select.copy()
     else:
         current_subset = init_subset.copy()
+
+    if only_nms:
+        dict_list = [full_dict_list[i] for i in current_subset]
+        scores = [full_conf_list[i] for i in current_subset]
+        dict_list = non_max_suppression(dict_list, scores, 0.8)
+        subset_to_remove = []
+        for i in current_subset:
+            if full_dict_list[i] not in dict_list:
+                subset_to_remove.append(i)
+        for i in subset_to_remove:
+            current_subset.remove(i)   
+        current_score, _, _, _, current_hierarchy = eval(current_subset, full_dict_list, full_conf_list, image, nms_update=True, store=store, award_list=award_list, shape_dict=shape_dict, img_shape=img_shape, tot_time=tot_time)
+        
+        if image is not None:
+            if isinstance(image, str):
+                tmp = save_root+os.path.basename(image)
+            else:
+                tmp = True
+            eval(current_subset, full_dict_list, full_conf_list, image, nms_update=True, scale=scale, line=line,
+                padding=padding, show=tmp, adjust=True, store=store, award_list=award_list, shape_dict=shape_dict, img_shape=img_shape, tot_time=tot_time)
+
+        return current_subset, current_score, current_hierarchy
+
     current_score, _, _, _, current_hierarchy = eval(current_subset, full_dict_list, full_conf_list, image, nms_update=True, store=store, award_list=award_list, shape_dict=shape_dict, img_shape=img_shape, tot_time=tot_time)
+
+    # print("current_score", current_subset, current_score)
 
     old_ori_select = ori_select
     # new_ori_select = [i for i in ori_select if (full_conf_list2[i]>0.2)or((full_conf_list2[i]>0.1)and(full_dict_list[i]['type']!='text'))]
@@ -203,6 +227,8 @@ def hill_climbing(ori_select, full_dict_list, full_conf_list, forbid_list=None, 
         current_subset = best_neighbor[0]
         current_score = best_score
         current_hierarchy = best_hierarchy
+        
+        # print("current_score", current_subset, current_score)
 
         order = order[best_neighbor[1] + 1:] + order[:best_neighbor[1] + 1]
 

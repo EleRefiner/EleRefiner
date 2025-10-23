@@ -46,7 +46,7 @@
                 />
             </div>
             <div id='main-gridlayout' class='gridlayout' @mouseenter="showButton" @mouseleave="hideButton">
-                <div id='buttons' class='buttons hidden' style="right: 30px">
+                <div id='buttons' class='buttons hidden' style="right: 10px">
                     <div id='prop' title='Check propagation' @click='onPropClick' v-ripple class='small-button' v-show="can_prop || prop_showed">
                         <svg class='icon' width='18px' height='18px' transform='translate(3, 3)' viewBox='0 0 1024 1024'>
                             <path d="M830.60526 1006.455055V298.915417l111.015651 41.404245c50.601962 0 68.354343-33.973884 39.429454-75.510888l-163.982384-217.065282c-28.933187-41.532856-76.270104-41.532856-105.186697 0l-163.986533 217.065282c-28.929038 41.532856-11.172508 98.5197 39.437751 75.510888l111.007354-41.404245v371.584431c-77.593547-105.373389-200.889415-196.16402-396.783769-222.823708l78.141179-81.850135c19.05508-44.424515-4.09064-72.789327-51.435855-63.043979l-247.969112 96.748196C32.947084 409.283867 15.124175 450.829169 40.692748 491.855881l150.374576 191.148215c25.568573 41.035009 82.273305 46.909599 81.132407-6.181596l-20.449051-113.027781s397.252574 39.836028 446.589176 443.614542" fill="#ffffff" p-id="10420"></path>
@@ -393,7 +393,7 @@ export default {
             this.grid_render.checkCrossInfluence(influenceDict, representDict);
         },
         drawLegend: function() {
-            let grid_margin = 30+3;
+            let grid_margin = 10+3;
             let legend_size = 20;
             legend_size = min(20, (this.svg_width-grid_margin*2)/30);
 
@@ -448,7 +448,7 @@ export default {
             this.legend = legend;
         }, 
         drawLegend2: function() {
-            let grid_margin = 30+3;
+            let grid_margin = 10+3;
             let legend_svgsize = this.legend_svg.node().getBoundingClientRect();
             let legend_size = legend_svgsize.height;
             let text_margin = legend_size*4;
@@ -694,7 +694,7 @@ export default {
         this.map_render = new MapRender(that);
         this.initOverview();
         
-        this.grid_margin = 30;
+        this.grid_margin = 10;
         this.top_margin = 2 + 24 + 6;
         this.grid_size = [30, 30]
         this.grid_size[0] = Math.max(1, Math.round((this.svg_height-this.top_margin)/(this.svg_width-2*this.grid_margin)*this.grid_size[1]));
@@ -744,7 +744,7 @@ export default {
 
 .gap15 {
     width: 100%;
-    height: 15px;
+    height: 10px;
 }
 .meta-info {
     width: 100%;
@@ -758,8 +758,8 @@ export default {
     /* width: 99%; */
     width: 100%;
     /* height: 89%; */
-    height: calc(84% - 45px);
-    margin-bottom: 30px;
+    height: calc(84% - 20px);
+    margin-bottom: 10px;
     /* margin: 0.5%; */
     position: relative;
 }

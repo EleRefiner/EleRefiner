@@ -9,7 +9,7 @@ import math
 import shapely
 from scipy.optimize import linear_sum_assignment
 from collections import Counter
-from .eval import Group, getSubType
+from .eval2 import Group, getSubType
 
 import os
 import sys
@@ -21,7 +21,8 @@ import SceneTreeCPP
 
 
 def hierarchy_merge_with_cpp(obj_list):
-    if len(obj_list) == 1:
+    # print("start merge hierarchy")
+    if len(obj_list) <= 1:
         return obj_list
 
     bounds = []
@@ -58,4 +59,5 @@ def hierarchy_merge_with_cpp(obj_list):
 
     obj_list = [dfsMerge()]
 
+    # print("end merge hierarchy")
     return obj_list

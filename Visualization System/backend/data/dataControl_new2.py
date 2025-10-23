@@ -10,12 +10,20 @@ import numpy as np
 from scipy.stats import percentileofscore
 import time
 import random
+from collections import Counter
+
+content_sim_thres = 0.45
+context_sim_thres = 0.33
 
 part_cnt = 10
 
-category_dict2 = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
+conf_thres = [0.3]*20  # TO FILL
+category_dict_super = {1: "text", 2: "text", 3: "text", 4: "HRO", 5: "HRO", 6: "sub-element", 7: "sub-element", 8: "sub-element", 9: "sub-element",
+    10: "chart", 11: "chart", 12: "chart", 13: "chart", 14: "chart", 15: "chart", 16: "chart", 17: "chart", 18: "chart", 19: "chart", 20: "chart"}  # TO FILL upper level class
+category_dict = {1: "Annotation", 2: "Title", 3: "Source", 4: "Label-Icon", 5: "Embellishment", 6: "legend", 7: "axis", 8: "gridline", 9: "mark", 
+    10: "Bar Chart", 11: "Line Chart", 12: "Radar Chart", 13: "Area Chart", 14: "Pie Chart", 15: "Proportional Chart", 16: "Treemap", 17: "ScatterPlot", 18: "Pyramid & Funnel Chart", 19: "Sankey Diagram", 20: "Heatmap"}  # TO FILL lower level class
 image_pre = "/YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
-similarity_scale_dict = {i: 1.0 for i in range(len(category_dict2))}
+similarity_scale_dict = {i: 0.7 for i in range(1, len(category_dict)+1)}
 
 class DataControl:
 
@@ -26,6 +34,7 @@ class DataControl:
         self.candidate = None
         self.hierarchy = None
         self.with_text = with_text
+        self.prop_text = False
         # self.clip_feature = {}
         self.image_pre = image_pre
         # self.image_pre = 
@@ -121,7 +130,7 @@ class DataControl:
                 self.get_influence_info(path, part)
             elif model == "dreamsim":
                 print("use dreamsim")
-                self.get_dreamsim_feature(path, part, convert="L", with_text=False)
+                self.get_dreamsim_feature(path, part, convert="L", no_dreamsim=["text", "gridline"])
                 # ----------------------------------
                 self.get_cross_influence(path, part)
                 self.get_influence_info(path, part)
@@ -161,7 +170,7 @@ class DataControl:
                 pickle.dump(features, file)
 
 
-    def get_dreamsim_feature(self, path=None, part=-1, convert="RGB", with_text=True):
+    def get_dreamsim_feature(self, path=None, part=-1, convert="RGB", no_dreamsim=[]):
         folder_path = os.path.join(path, "content")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -185,8 +194,8 @@ class DataControl:
             image_info = self.sample_list[i]
             boxes = []
             for item2 in item["annotations"]:
-                if not with_text:
-                    if category_dict2[item2["category_id"]] == "text":
+                if no_dreamsim:
+                    if category_dict_super[item2["category_id"]] in no_dreamsim or category_dict[item2["category_id"]] in no_dreamsim:
                         continue
                 boxes.append((item2["bbox"][0], item2["bbox"][1], item2["bbox"][0]+item2["bbox"][2], item2["bbox"][1]+item2["bbox"][3]))
             
@@ -195,11 +204,11 @@ class DataControl:
             else:
                 features = np.array([])
             
-            if not with_text:
+            if no_dreamsim:
                 tmp_cnt = 0
                 tmp_features = []
                 for item2 in item["annotations"]:
-                    if category_dict2[item2["category_id"]] == "text":
+                    if category_dict_super[item2["category_id"]] in no_dreamsim or category_dict[item2["category_id"]] in no_dreamsim:
                         tmp_features.append(np.zeros(1792))
                         continue
                     tmp_features.append(features[tmp_cnt])
@@ -300,6 +309,8 @@ class DataControl:
             source_sample_id = int(i)
             if record["now"]==0:
                 continue
+            
+            # print("update: ", i)
 
             if save_record is not None:
                 save_record[i] = record
@@ -411,8 +422,8 @@ class DataControl:
 
                     source_annot = new_candidate[source_sample_id]["annotations"][source_bid]
                     new_class = operate["class"]
-                    for cid in category_dict2:
-                        if category_dict2[cid] == new_class:
+                    for cid in category_dict:
+                        if category_dict[cid] == new_class:
                             source_annot["category_id"] = cid
                     if source_sample_id not in updated_sample_id_list:
                         updated_sample_id_list.append(source_sample_id)
@@ -426,33 +437,26 @@ class DataControl:
 
                             target_annot = new_candidate[target_sample_id]["annotations"][target_bid]
 
-                            for cid in category_dict2:
-                                if category_dict2[cid] == new_class:
+                            for cid in category_dict:
+                                if category_dict[cid] == new_class:
                                     target_annot["category_id"] = cid
 
                             if target_sample_id not in updated_sample_id_list:
                                 updated_sample_id_list.append(target_sample_id)
-                                
-                                check_images = ["deduped_images_4_jiangning_DataPipeline_data_dirs_candidate_images_4_pinterest_new_multiple_minzhi_202502111950_non_hro_treemap_1070590142646511772.jpg", "deduped_images_4_jiangning_DataPipeline_data_dirs_candidate_images_4_pinterest_new_multiple_minzhi_202502111950_unknown_bar chart_10555380368146406.jpg", "deduped_images_4_jiangning_DataPipeline_data_dirs_candidate_images_4_pinterest_new_multiple_minzhi_202502111950_unknown_bar chart_51791464450681540.jpg"]
-                                for check_image in check_images:
-                                    if check_image in self.sample_list[target_sample_id]["file_name"]:
-                                        print("influence", self.sample_list[source_sample_id]["file_name"], self.sample_list[target_sample_id]["file_name"], within_influence[str(source_bid)][target_sample_id][target_bid])
-                                        print("box", self.hierarchy[source_sample_id]["boxes"][source_bid], self.hierarchy[target_sample_id]["boxes"][target_bid])
-                                        with open("/data/yuxing/detection-va/backend/data/datasets/mixed_10000/content/dreamsim_features/"+str(source_sample_id)+".pkl", "rb") as file:
-                                            features1 = pickle.load(file)
-                                        with open("/data/yuxing/detection-va/backend/data/datasets/mixed_10000/content/dreamsim_features/"+str(target_sample_id)+".pkl", "rb") as file:
-                                            features2 = pickle.load(file)
-                                        print("feature", np.dot(features1[source_bid], features2[target_bid]))
 
                 elif operate["type"] == "group-class":
                     for source_bid in operate["ids"]:
                         source_annot = new_candidate[source_sample_id]["annotations"][source_bid]
                         new_class = operate["class"]
-                        for cid in category_dict2:
-                            if category_dict2[cid] == new_class:
+                        old_cid = source_annot["category_id"]
+                        for cid in category_dict:
+                            if category_dict[cid] == new_class:
                                 source_annot["category_id"] = cid
                         if source_sample_id not in updated_sample_id_list:
                             updated_sample_id_list.append(source_sample_id)
+                        
+                        if source_annot["score"] < conf_thres[old_cid-1]:    # 仅使confidence较高的元素修改进行传播
+                            continue
 
                         thres = within_influence["thres"]
 
@@ -463,12 +467,13 @@ class DataControl:
 
                                 target_annot = new_candidate[target_sample_id]["annotations"][target_bid]
 
-                                for cid in category_dict2:
-                                    if category_dict2[cid] == new_class:
+                                for cid in category_dict:
+                                    if category_dict[cid] == new_class:
                                         target_annot["category_id"] = cid
 
                                 if target_sample_id not in updated_sample_id_list:
                                     updated_sample_id_list.append(target_sample_id)
+                print("updated len:", len(updated_sample_id_list))
 
         for sample_id in new_candidate:
             self.candidate[sample_id] = new_candidate[sample_id]
@@ -646,8 +651,7 @@ class DataControl:
                 continue
             influence = {}
             feature1 = feature_dict[i]
-            # for j in range(len(self.sample_list)): #TODO
-            for j in random.sample(range(len(self.sample_list)), 100)+[i]:
+            for j in random.sample(range(len(self.sample_list)), 100)+[i]:    # 仅取100个计算影响力
                 feature2 = feature_dict[j]
                 influence[j] = np.dot(feature1, feature2.T)
                 influence[j] = influence[j] * similarity_scale[:, np.newaxis]
@@ -666,9 +670,9 @@ class DataControl:
 
         ranking = []
 
-        thres = 0.75
+        thres = content_sim_thres*1.6
         if self.model == "dreamsim":
-            thres = 0.45      
+            thres = content_sim_thres     
         
         rg = list(range(len(self.sample_list)))
         ln = len(self.sample_list)
@@ -731,9 +735,9 @@ class DataControl:
 
         path = self.path
 
-        thres = 0.75
+        thres = content_sim_thres*1.6
         if self.model == "dreamsim":
-            thres = 0.45
+            thres = content_sim_thres
 
         influence_folder_path = os.path.join(path, "content/"+str(self.model)+"_"+"influence")
         influence_info_folder_path = os.path.join(path, "content/"+str(self.model)+"_"+"influence_info")
@@ -807,7 +811,7 @@ class DataControl:
             if os.path.exists(hierarchy_influence_path):
                 continue
             
-            hierarchy1 = getObjHierarchy(hierarchy_json_list[i]['hierarchy'], hierarchy_json_list[i]['boxes'], with_text=False)
+            hierarchy1 = getObjHierarchy(hierarchy_json_list[i]['hierarchy'], hierarchy_json_list[i]['boxes'], with_text=self.prop_text, use_type="super_class")   # use type 使用super_class来判断结构相似性
             obj_dict1 = getObjDict(hierarchy1)
             context_dict1 = {}
             for bid in obj_dict1:
@@ -824,10 +828,18 @@ class DataControl:
 
             for bid in range(len(content_influence_info)):
                 hierarchy_influence[bid] = {}
+            
+            print("need to calc:", Counter([hierarchy_json_list[i]['boxes'][bid1]["class"] for bid1 in range(len(content_influence_info))]))
+            tmp_list = [context_dict1[bid1] for bid1 in range(len(content_influence_info)) if bid1 in context_dict1]
+            print("need to calc:", len(tmp_list), len(Counter(tmp_list)))
+
+            cover_store_source = {}
 
             for j in tqdm(content_influence):
                 store = {}
-                hierarchy2 = getObjHierarchy(hierarchy_json_list[j]['hierarchy'], hierarchy_json_list[j]['boxes'], with_text=False)
+                cover_store_now = {}
+
+                hierarchy2 = getObjHierarchy(hierarchy_json_list[j]['hierarchy'], hierarchy_json_list[j]['boxes'], with_text=self.prop_text, use_type="super_class") # use type 使用super_class来判断结构相似性
                 obj_dict2 = getObjDict(hierarchy2)
                 context_dict2 = {}
                 for bid2 in obj_dict2:
@@ -836,7 +848,7 @@ class DataControl:
                 for bid1 in range(len(content_influence_info)):
                     hierarchy_influence[bid1][j] = {}
                     for bid2 in content_influence_info[bid1][j]:
-                        if hierarchy_json_list[i]['boxes'][bid1]["class"] != hierarchy_json_list[j]['boxes'][bid2]["class"]:
+                        if hierarchy_json_list[i]['boxes'][bid1]["class"] != hierarchy_json_list[j]['boxes'][bid2]["class"]:  # 传播的元素类别必须相同
                             continue
 
                         if bid1 not in obj_dict1:
@@ -844,7 +856,7 @@ class DataControl:
                         if bid2 not in obj_dict2:
                             continue
                         
-                        hierarchy_influence[bid1][j][bid2] = getBestSimilarity(obj_dict2[bid2], context_dict1[bid1], obj_dict1[bid1], store=store)
+                        hierarchy_influence[bid1][j][bid2] = getBestSimilarity(obj_dict2[bid2], context_dict1[bid1], obj_dict1[bid1], store=store, cover_store_source=cover_store_source, cover_store_now=cover_store_now)
                         # hierarchy_influence[bid1][j][bid2] = getSimilarity(context_dict2[bid2], obj_dict2[bid2], context_dict1[bid1], obj_dict1[bid1], store=store)
             
             with open(hierarchy_influence_path, 'wb') as file:
@@ -864,10 +876,10 @@ class DataControl:
 
         ranking = []
         
-        thres = 0.75
+        thres = content_sim_thres*1.6
         if self.model == "dreamsim":
-            thres = 0.45
-        thres = thres * 0.33
+            thres = content_sim_thres
+        thres = thres * context_sim_thres
 
         rg = list(range(len(self.sample_list)))
         ln = len(self.sample_list)
@@ -905,7 +917,7 @@ class DataControl:
                     pickle.dump(hierarchy_influence_info, file)
 
             for bid in hierarchy_influence_info:
-                if not self.with_text and hierarchy_json_list[i]['boxes'][bid]["class"] == "text":
+                if not self.prop_text and hierarchy_json_list[i]['boxes'][bid]["super_class"] == "text":   # text不传播
                     # print("text")
                     continue
                 ranking.append(len(hierarchy_influence_info[bid]["full"]))
@@ -920,10 +932,10 @@ class DataControl:
 
         path = self.path
 
-        thres = 0.75
+        thres = content_sim_thres*1.6
         if self.model == "dreamsim":
-            thres = 0.45
-        thres = thres * 0.33
+            thres = content_sim_thres
+        thres = thres * context_sim_thres
 
         content_influence_folder_path = os.path.join(path, "content/"+str(self.model)+"_"+"influence")
         hierarchy_influence_folder_path = os.path.join(path, "hierarchy/"+str(self.model)+"_"+"influence")
@@ -983,10 +995,10 @@ class DataControl:
 
         path = self.path
 
-        thres1 = 0.75
+        thres1 = content_sim_thres*1.6
         if self.model == "dreamsim":
-            thres1 = 0.45
-        thres2 = thres1 * 0.33
+            thres1 = content_sim_thres
+        thres2 = thres1 * context_sim_thres
         
         hierarchy_json_list = self.get_hierarchy()
 
@@ -1049,7 +1061,7 @@ class DataControl:
         with open(hierarchy_influence_path, 'rb') as file:
             hierarchy_influence = pickle.load(file)
 
-        hierarchy_source = getObjHierarchy(hierarchy_json_list[id]['hierarchy'], hierarchy_json_list[id]['boxes'], with_text=False)
+        hierarchy_source = getObjHierarchy(hierarchy_json_list[id]['hierarchy'], hierarchy_json_list[id]['boxes'], with_text=self.prop_text, use_type="super_class") # use type 使用super_class来判断结构相似性
         obj_dict_source = getObjDict(hierarchy_source)
 
         # print("load 3", time.time()-start)
@@ -1065,7 +1077,7 @@ class DataControl:
         
         if len(bids) > 0:
             for i in target_ids:
-                hierarchy_dict[i] = getObjHierarchy(hierarchy_json_list[i]['hierarchy'], hierarchy_json_list[i]['boxes'], with_text=False)
+                hierarchy_dict[i] = getObjHierarchy(hierarchy_json_list[i]['hierarchy'], hierarchy_json_list[i]['boxes'], with_text=self.prop_text, use_type="super_class") # use type 使用super_class来判断结构相似性
                 obj_dict_dict[i] = getObjDict(hierarchy_dict[i])
                 context_dict_dict[i] = {}
                 for bid1 in obj_dict_dict[i]:
@@ -1082,7 +1094,10 @@ class DataControl:
         
         # print("load 5", time.time()-start)
 
+        cover_store_source = {}
         store = {}
+        cover_store_now = {}
+        
         for bid1 in bids:
             if not bid1 in online_influence_info:
                 online_influence_info[bid1] = {}
@@ -1105,7 +1120,7 @@ class DataControl:
                         show_flag = True
                         print("bid2:", bid2, "content score:", content_score)
 
-                    if hierarchy_json_list[id]['boxes'][bid1]["class"] != hierarchy_json_list[target_id]['boxes'][bid2]["class"]:
+                    if hierarchy_json_list[id]['boxes'][bid1]["class"] != hierarchy_json_list[target_id]['boxes'][bid2]["class"]:  # 传播的元素类别必须相同
                         continue
 
                     if content_score < thres1:
@@ -1120,7 +1135,7 @@ class DataControl:
                     if False:
                         hierarchy_score = hierarchy_influence[bid1][target_id][bid2]
                     else:
-                        hierarchy_score = getBestSimilarity(obj_dict_dict[target_id][bid2], context_dict_source[bid1], obj_dict_source[bid1], store=store, show=show_flag)
+                        hierarchy_score = getBestSimilarity(obj_dict_dict[target_id][bid2], context_dict_source[bid1], obj_dict_source[bid1], store=store, cover_store_source=cover_store_source, cover_store_now=cover_store_now, show=show_flag)
 
                     if show_flag:
                         print("bid2:", bid2, "hierarchy score:", hierarchy_score)
@@ -1230,5 +1245,5 @@ if __name__ == "__main__":
     if len(args)>0:
         arg = int(args[0])
 
-    data_control = DataControl(False)
+    data_control = DataControl(with_text=True)
     data_control.load_data("datasets/infographic", need_feature=True, model="dreamsim", need_hierarchy_feature=True, part=arg, before_part=False)  # TO FILL

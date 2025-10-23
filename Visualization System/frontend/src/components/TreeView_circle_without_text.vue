@@ -53,7 +53,7 @@
                     </g>
                 </svg>
                 <div id="control-tree">
-                    <div class="control">
+                    <!-- <div class="control">
                         <button id='apply_bottom' title='Apply' :disabled="!$parent.$parent.can_apply" @click='buttonApply' v-ripple class='rect-button'>
                             <svg class='icon' width='18px' height='18px' transform='translate(0, 5)' viewBox='0 0 1024 1024'>
                                 <path d="M1004.50304 266.82624l-587.072 594.16064-17.1904 16.19328-17.1904-16.19328L19.49696 493.03808l118.53696-119.9872 262.17856 265.37984 485.7536-491.6096L1004.50304 266.82624 1004.50304 266.82624zM1004.50304 266.82624" fill="white"></path>
@@ -76,6 +76,9 @@
                             </svg>
                             Cancel
                         </button>
+                    </div> -->
+                    <div class="color-legend-div">
+                        <svg class="color-legend"></svg>
                     </div>
                     <div class="tree-legend-div">
                         <svg class="tree-legend"></svg>
@@ -159,7 +162,6 @@ export default {
     methods: {
         buttonApply: function() {
             this.$parent.$parent.buttonApply();
-
         },
         buttonUndo: function() {
             // console.log("buttonUndo", this.$parent.$parent.tmp_edit_record);
@@ -219,7 +221,7 @@ export default {
                 let data2 = node_dict[id2];
                 
                 let tmp_change2 = (update_dict[id]["new_score"] - that.boxes[id2].score) * tmp_ratio;
-                tmp_change2 = Math.max(-Math.abs(tmp_ratio*tmp_change), Math.min(Math.abs(tmp_ratio*tmp_change), tmp_change2));
+                tmp_change2 = Math.max(-Math.abs(tmp_ratio*tmp_change2), Math.min(Math.abs(tmp_ratio*tmp_change2), tmp_change2));
 
                 if(tmp_change2*(scale-1) < 0) continue;
                 let old_score2 = that.boxes[id2].score;
@@ -266,7 +268,7 @@ export default {
                     }
 
                     let tmp_change2 = (update_dict[id]["new_score_base"] - update_dict[id2]["old_score"]) * tmp_ratio;
-                    tmp_change2 = Math.max(-Math.abs(tmp_ratio*tmp_change), Math.min(Math.abs(tmp_ratio*tmp_change), tmp_change2));
+                    tmp_change2 = Math.max(-Math.abs(tmp_ratio*tmp_change2), Math.min(Math.abs(tmp_ratio*tmp_change2), tmp_change2));
 
                     if(tmp_change2*(scale-1) < 0) continue;
 
@@ -377,18 +379,20 @@ export default {
             if (record == null) return null;
             let that = this;
             let DFSlist = that.getDFSList(that.h_data, "_children");
-            let node_dict = {};
-            for(let data of DFSlist) node_dict[data.name] = data;
+            // let node_dict = {};
+            // for(let data of DFSlist) node_dict[data.name] = data;
             
             let update_dict = {};
             for(let i=0;i<record["now"];i++) {
                 let tmp_update_dict = record["update"][i]["update_dict"];
                 for(let id2 in tmp_update_dict) {
-                    let data = node_dict[id2];
-                    that.boxes[data.child_index[0]].score = tmp_update_dict[id2]["new_score"];
-                    update_dict[id2] = {"new_score": that.boxes[data.child_index[0]].score, "new_class": that.boxes[data.child_index[0]].class};
+                    // let data = node_dict[id2];
+                    that.boxes[id2].score = tmp_update_dict[id2]["new_score"];
+                    that.boxes[id2].class = tmp_update_dict[id2]["new_class"];
+                    update_dict[id2] = {"new_score": that.boxes[id2].score, "new_class": that.boxes[id2].class};
                 }
             }
+            console.log("restore update dict", update_dict);
             that.updateAvgScoreAndClass(that.h_data, "_children");
             that.resetNode();
 
@@ -1718,8 +1722,8 @@ export default {
                             that.updateClick(d2.node.name, d.data.name);
                         });
 
-                    // let tmp_d = [0, 0.25, 0.50, 0.75, that.thres];
-                    let tmp_d = [0, 0.25, 0.50, 0.75];
+                    let tmp_d = [0, 0.25, 0.50, 0.75, that.thres];
+                    // let tmp_d = [0, 0.25, 0.50, 0.75];
                     let axis_g = now_group.selectAll(".axis_g")
                         .data(tmp_d);
                     let new_axis_g = axis_g.enter()
@@ -2139,6 +2143,8 @@ export default {
             id_cnt = 10000;
             function dfs(hierarchy, deep) {
                 if(typeof hierarchy === 'number') {
+                    if(boxes[hierarchy].class == "text")return null;
+
                     boxes[hierarchy].deep = deep;
                     let category_cnt = {};
                     let category_area = {};
@@ -2188,6 +2194,7 @@ export default {
                 that.max_deep = Math.max(that.max_deep, hierarchy.deep);
                 for(let child of hierarchy.children) {
                     let tmp_child = dfs(child, hierarchy.deep-1);
+                    if(tmp_child == null) continue;
                     tmp._children.push(tmp_child);
                     tmp.child_index = tmp.child_index.concat(tmp_child.child_index);
                     tmp.child_names = tmp.child_names.concat(tmp_child.child_names);
@@ -2200,6 +2207,9 @@ export default {
                     tmp.layers = max(tmp.layers, tmp_child.layers+1);
                     tmp.cnt = Object.values(tmp.category_weight).reduce((acc, val) => acc + val, 0);
                 }
+                
+                if(tmp._children.length == 0) return null;
+                if(tmp._children.length == 1) return tmp._children[0];
 
                 let score_avg = 0;
                 for(let i=0;i<tmp.child_index.length;i++) {
@@ -2223,7 +2233,8 @@ export default {
                         let box1 = tmp._children[i].bbox;
                         let box2 = tmp._children[j].bbox;
                         // console.log("sort", box1, box2);
-                        if((box1[1]>box2[1])||((box1[1]==box2[1])&&(box1[0]>box2[0]))||((box1[1]==box2[1])&&(box1[0]==box2[0])&&(box1[3]<box2[3]))) {
+                        // if((box1[1]>box2[1])||((box1[1]==box2[1])&&(box1[0]>box2[0]))||((box1[1]==box2[1])&&(box1[0]==box2[0])&&(box1[3]<box2[3]))) {
+                        if(box1[0]+box1[1]>box2[0]+box2[1]) {
                             flag = true;
                         }
                     }
@@ -2237,7 +2248,8 @@ export default {
             }
             if(item.hierarchy != null) {
                 h_data = dfs(item.hierarchy, item.hierarchy.deep);
-            }else if(boxes.length >= 1) {
+            }
+            if((h_data == null)&&(boxes.length >= 1)) {
                 let category_cnt = {};
                 let category_area = {};
                 for(let key in that.categories_dict){
@@ -2276,7 +2288,44 @@ export default {
         },
         drawLegend() {
             let that = this;
+            that.color_legend_svg = d3.select(".color-legend");
             that.legend_svg = d3.select(".tree-legend");
+
+            let color_legend_svgsize = that.color_legend_svg.node().getBoundingClientRect();
+            let stroke_width = 0;
+            let legend_size = 20;
+            legend_size = min(min(20, color_legend_svgsize.height/3), color_legend_svgsize.width/17);
+
+            for(let i=0;i<that.categories.length;i++) {
+                that.categories[i].tree_y = i/(that.categories.length-1)*(color_legend_svgsize.height - stroke_width - legend_size);
+            }
+            const legend = that.color_legend_svg.selectAll(".legend")
+                .data(that.categories)
+                .enter().append("g")
+                .attr("class", "legend")
+                .attr("transform", (d, i) => `translate(0, ${d.tree_y})`);
+            legend.append("circle")
+                .attr("cx", (stroke_width+legend_size)*1/3)
+                .attr("cy", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
+                .attr("r", legend_size*1/3)
+                .attr("fill", d => d.color)
+                .attr("stroke-width", stroke_width)
+                .attr("stroke", d => d.color)
+                .attr("opacity", 0.9);
+            legend.append("circle")
+                .attr("cx", (stroke_width+legend_size)*1/3 + legend_size)
+                .attr("cy", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
+                .attr("r", legend_size*1/3)
+                .attr("fill", d => d.color)
+                .attr("stroke-width", stroke_width)
+                .attr("stroke", d => d.color)
+                .attr("opacity", 0.5);
+            legend.append("text")
+                .attr("x", stroke_width/2 + 2*legend_size)
+                .attr("y", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
+                .attr("dy", '.35em')
+                .text(d => "Selected / Unselected "+d.text)
+                .attr("font-size", legend_size*4/5);
             
             that.legend_svg.append("defs").selectAll("marker")
                 .data(["arrow-start", "arrow-end"])
@@ -2587,6 +2636,7 @@ export default {
             this.newLayout(item);
 
             this.$parent.$parent.wait_cnt += 1;
+            console.log("tree add wait cnt", this.$parent.$parent.wait_cnt);
         }
     },
     mounted() {
@@ -2594,6 +2644,7 @@ export default {
         for(let i=0;i<this.$parent.$parent.categories.length;i++) {
             this.class_order[this.$parent.$parent.categories[i]["name"]] = i;
         }
+        console.log("order", this.class_order);
 
         let card = document.querySelector('.svg-info')
         let tmp = card.style.maxHeight;
@@ -2651,7 +2702,7 @@ export default {
             .attr("font-size", legend_size*1)
             .attr("font-weight", "bold")
             .attr("fill", "#344461")
-            .text("Scene tree of the chart");
+            .text("Scene tree");
 
         const yScale = d3.scaleLinear()
             .domain([0, 1.05])
@@ -2773,9 +2824,9 @@ export default {
 .TreeFlex {
     display: flex;
     height: 100%;
-    width: calc(100% - 45px);
-    margin-left: 30px;
-    margin-right: 15px;
+    width: calc(100% - 15px);
+    margin-left: 10px;
+    margin-right: 5px;
     flex-direction: column;
 }
 
@@ -2796,6 +2847,18 @@ export default {
     height: 100%;
     justify-content: center;
     align-items: end;
+}
+
+.color-legend-div{
+    display: flex;
+    width: 50%;
+    height: 100%;
+    justify-content: center;
+    align-items: end;
+}
+.color-legend{
+    width: 100%;
+    height: 90%;
 }
 
 .tree-legend-div {

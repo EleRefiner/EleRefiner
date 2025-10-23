@@ -105,10 +105,10 @@ export default {
 
 <style scoped>
 .meta-content {
-    width: calc(100% - 60px);
+    width: calc(100% - 20px);
     height: calc(95% - 12px);
-    margin-left: 30px;
-    margin-right: 30px;
+    margin-left: 10px;
+    margin-right: 10px;
     margin-bottom: 12px;
     top: 2.5%;
     position: relative;

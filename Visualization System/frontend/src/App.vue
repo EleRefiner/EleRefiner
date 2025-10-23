@@ -540,11 +540,11 @@ html, body, #app {
     vertical-align: top;
     /* background-color: rgb(244, 244, 244); */
     /* background-color: rgb(237, 242, 254); */
-    height: calc(100% - 60px);
+    height: calc(100% - 20px);
     position: relative;
     /* border-left: 1px solid #ddd;
     border-right: 1px solid #ddd; */
-    margin: 30px;
+    margin: 10px;
     /* border-radius: 20px; */
     /* box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);  */
     text-align: left;
@@ -576,8 +576,8 @@ html, body, #app {
     line-height: 28px;
     /* border-bottom: 1px solid #ddd; */
     text-align: left;
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
     /*padding-top: 25px;*/
     padding-top: 12.5px;
     padding-bottom: 12.5px;
@@ -671,13 +671,13 @@ html, body, #app {
 }
 
 .ImageEdit {
-    width: calc(64% - 45px);
-    margin-left: 15px;
+    width: calc(64% - 15px);
+    margin-left: 5px;
 }
 
 .grid-panel {
-    width: calc(36% - 45px);
-    margin-right: 15px;
+    width: calc(36% - 15px);
+    margin-right: 5px;
 }
 
 .drag-cursor {

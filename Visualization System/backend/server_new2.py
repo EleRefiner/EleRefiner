@@ -76,8 +76,8 @@ def get_sample_influence_bids():
 
 if __name__ == '__main__':
     print("start")
-    data_control = DataControl(False)
-    # data_control = DataControl(False, use_prop=False)
+    data_control = DataControl(with_text=True)
+    # data_control = DataControl(with_text=True, use_prop=False)
 
     data_control.load_data("data/datasets/YOUR_DATASET", model="dreamsim") # TO FILL
 

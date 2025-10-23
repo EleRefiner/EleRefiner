@@ -7,19 +7,23 @@ import shutil
 import copy
 from scene_tree.grouping import eval_hierarchy, mergeOtherCandidate
 from scene_tree.opti import hill_climbing
-from scene_tree.eval import getShape
+from scene_tree.eval2 import getShape
 from tqdm import tqdm
 import pickle
 from scene_tree.SAM.sam import get_mask_predictor, sam_get_mask_shape, sam_pred_image
 import time
 
-
-min_thres_ratio = 1/3 # TO FILL
-category_dict = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
-category_dict2 = { 1: "HRO", 2: "text", 3: "chart"}  # TO FILL
+max_quata = 120  # TO FILL
+conf_thres = [0.3]*20  # TO FILL
+min_thres_ratio = 1/3  # TO FILL
+category_dict_scenetree = {1: "text", 2: "text", 3: "text", 4: "HRO", 5: "HRO", 6: "sub-element", 7: "sub-element", 8: "gridline", 9: "mark",
+    10: "chart", 11: "chart", 12: "chart", 13: "chart", 14: "chart", 15: "chart", 16: "chart", 17: "chart", 18: "chart", 19: "chart", 20: "chart"}    # TO FILL used in scene tree
+category_dict_super = {1: "text", 2: "text", 3: "text", 4: "HRO", 5: "HRO", 6: "sub-element", 7: "sub-element", 8: "sub-element", 9: "sub-element",
+    10: "chart", 11: "chart", 12: "chart", 13: "chart", 14: "chart", 15: "chart", 16: "chart", 17: "chart", 18: "chart", 19: "chart", 20: "chart"}    # TO FILL upper level class
+category_dict = {1: "Annotation", 2: "Title", 3: "Source", 4: "Label-Icon", 5: "Embellishment", 6: "legend", 7: "axis", 8: "gridline", 9: "mark", 
+    10: "Bar Chart", 11: "Line Chart", 12: "Radar Chart", 13: "Area Chart", 14: "Pie Chart", 15: "Proportional Chart", 16: "Treemap", 17: "ScatterPlot", 18: "Pyramid & Funnel Chart", 19: "Sankey Diagram", 20: "Heatmap"}  # TO FILL lower level class
 image_pre = "/YOUR/IMAGE/FOLDER/PATH/"  # TO FILL
 image_pre2 = "YOUR/PUBLIC/IMAGE/FOLDER/PATH/"  # TO FILL
-conf_thres = [0.3] * len(category_dict)
 
 def mergeCandidateText(candidate_without_text, text, image_list, path, use_mask=False):
 
@@ -88,10 +92,7 @@ def getCandidate(annotations_pred, image_list, path, use_mask=True, with_text=Tr
             sam_pred_image(mask_predictor, image_pre+item["file_name"])
             time_mask += time.time() - start
 
-        full_dict_list = []
         ori_select = []
-        full_conf_list = []
-        full_conf_list2 = []
         full_item_list = []
         shape_dict = {}
 
@@ -119,34 +120,31 @@ def getCandidate(annotations_pred, image_list, path, use_mask=True, with_text=Tr
         
         tmp_cnt = 0
         for i, (id, conf) in enumerate(sort_list):
-            # if i>= 100:
-            # if i >= 120:
-            #     break
-            if tmp_cnt >= 120:
+            if tmp_cnt >= max_quata:
                 break
-            if with_text or category_dict2[candidate_list[id]["category_id"]] != "text":
+            if with_text or category_dict_super[candidate_list[id]["category_id"]] != "text":
                 tmp_cnt += 1
             thres = conf-0.000001
 
         thres = max(min_thres_ratio, thres)
+        thres = min(thres, 1)
         print(thres)
 
         category_cnt_dict = {}
 
         for item2 in candidate_list:
             
-            
             bbox = (round(item2["bbox"][0]), round(item2["bbox"][1]), round(item2["bbox"][0])+round(item2["bbox"][2]), round(item2["bbox"][1])+round(item2["bbox"][3]))
 
             category_id = item2["category_id"]
 
-            if category_id in category_dict:
-                tp = category_dict[category_id]
+            if category_id in category_dict_scenetree:
+                tp = category_dict_scenetree[category_id]
             else:
                 tp = "other_" + str(category_id)
             
-            if category_id in category_dict2:
-                tp2 = category_dict2[category_id]
+            if category_id in category_dict_super:
+                tp2 = category_dict_super[category_id]
             else:
                 tp2 = "other_" + str(category_id)
 
@@ -154,14 +152,10 @@ def getCandidate(annotations_pred, image_list, path, use_mask=True, with_text=Tr
                 ori_select.append(cnt2)
 
             if item2['score_scale']*item2['score'] > conf_thres[item2['category_id']-1]*thres:
-                full_dict_list.append({"type": tp, "box": bbox, "conf": item2['score_scale']*item2['score'], "id": cnt2})
-                full_conf_list.append(item2['score_scale']*item2['score'])
-                full_conf_list2.append(item2['score_scale']*item2['score']-conf_thres[item2['category_id']-1]*max(1, thres))
                 full_item_list.append(item2)
                 if use_mask:
-                    # if tp == 'data':
-                    # if True:
-                    if with_text or tp2 != "text":
+                    # if with_text or tp2 != "text":
+                    if tp in ["HRO", "mark"]:
                         start = time.time()
                         tmp_shape = sam_get_mask_shape(mask_predictor, np.array(bbox).astype('int'))
                         if tmp_shape is not None:
@@ -207,13 +201,13 @@ def getHierarchy(full_annots, shape_dict, subset, image_info, use_optimal=True, 
     for item2 in full_annots:
         category_id = item2["category_id"]
 
-        if category_id in category_dict:
-            tp = category_dict[category_id]
+        if category_id in category_dict_scenetree:
+            tp = category_dict_scenetree[category_id]
         else:
             tp = "other_" + str(category_id)
         
-        if category_id in category_dict2:
-            tp2 = category_dict2[category_id]
+        if category_id in category_dict_super:
+            tp2 = category_dict_super[category_id]
         else:
             tp2 = "other_" + str(category_id)
 
@@ -247,7 +241,7 @@ def getHierarchy(full_annots, shape_dict, subset, image_info, use_optimal=True, 
         if not with_text:
             ori_select = np.setdiff1d(subset, forbid_list).tolist()
             forbid_select = np.intersect1d(subset, forbid_list).tolist()
-        subset, _, hierarchy = hill_climbing(ori_select=ori_select, full_dict_list=full_dict_list, full_conf_list=full_conf_list, full_conf_list2=full_conf_list2, shape_dict=shape_dict, img_shape=img_shape, forbid_list=forbid_list)
+        subset, _, hierarchy = hill_climbing(ori_select=ori_select, full_dict_list=full_dict_list, full_conf_list=full_conf_list, full_conf_list2=full_conf_list2, shape_dict=shape_dict, img_shape=img_shape, forbid_list=forbid_list, only_nms=(len(full_dict_list)>max_quata))
         # print("subset", subset, forbid_select, ori_subset)
         if not with_text:
             for i in forbid_select:
@@ -287,12 +281,18 @@ def getHierarchy(full_annots, shape_dict, subset, image_info, use_optimal=True, 
 
         category_id = annot["category_id"]
 
-        if category_id in category_dict2:
-            tp = category_dict2[category_id]
+        if category_id in category_dict_super:
+            tp = category_dict_super[category_id]
         else:
             tp = "other_" + str(category_id)
 
-        tmp2["class"] = tp
+        if category_id in category_dict:
+            tp2 = category_dict[category_id]
+        else:
+            tp2 = "other_" + str(category_id)
+
+        tmp2["super_class"] = tp
+        tmp2["class"] = tp2
 
         if annot in sub_annots:
             tmp2["unselected"] = False

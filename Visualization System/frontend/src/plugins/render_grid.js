@@ -22,7 +22,7 @@ const GridRender = function(parent) {
   that.hide_opacity = 0.4;
   // that.min_image_size = 44;
   // that.min_image_size2 = 80;
-  that.min_image_size = 28;
+  that.min_image_size = 36;
   that.min_image_size2 = 50;
   
   that.current_click = -1;

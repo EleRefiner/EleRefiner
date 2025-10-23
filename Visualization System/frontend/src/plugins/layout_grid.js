@@ -118,7 +118,7 @@ const GridLayout = function(parent) {
     let grid_width = that.cell - 2*that.stroke_width;
     let image_border = Math.max(4, 0.1*grid_width);
     if((that.parent.min_image_size > grid_width-2*image_border)
-      && (that.parent.min_image_size2 > that.cell*1.2))
+      || (that.parent.min_image_size2 > that.cell*1.2))
       use_bias = true;
     for(let i=0;i<grid_info.grid.length;i++) {
       poses.push([0, 0]);

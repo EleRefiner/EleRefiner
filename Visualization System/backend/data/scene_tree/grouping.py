@@ -158,7 +158,7 @@ def hierarchy_merge(obj_list):
 
     return hierarchy_merge_with_cpp(obj_list)
 
-    if len(obj_list) == 1:
+    if len(obj_list) <= 1:
         return obj_list
 
     full_flag = 1
@@ -403,8 +403,7 @@ def hierarchy_merge(obj_list):
     return obj_list
 
 
-def getFullOverlapScore(obj_list, overlap_store=None):
-    # TODO: modify overlapping strategy here
+def getFullOverlapScore(obj_list, overlap_store=None, cover_type="soft", allow_same_cover=False):
     full_area = 0
     # full_area_s = 0
     min_x, min_y, max_x, max_y = 10000000, 10000000, -10000000, -10000000
@@ -430,27 +429,13 @@ def getFullOverlapScore(obj_list, overlap_store=None):
             # shape2 = shapely.geometry.box(obj2.box[0], obj2.box[1], obj2.box[2], obj2.box[3])
             # shape2 = obj2.mask_shape
             shape2 = obj2.mask_obj
-            hard_cover1, soft_cover1 = if_cover(obj1, obj2, type='both')
-            hard_cover2, soft_cover2 = if_cover(obj2, obj1, type='both')
-            true_cover1 = (hard_cover1 == 1 and obj1.type != "text" and obj1.type != obj2.type)
-            true_cover2 = (hard_cover2 == 1 and obj2.type != "text" and obj1.type != obj2.type)
-            true_cover_same1 = (hard_cover1 == 1 and obj1.type != "text")
-            true_cover_same2 = (hard_cover2 == 1 and obj2.type != "text")
-            # print(obj1.shape, obj1.box)
-            # print(obj2.shape, obj2.box)
-            # print(hard_cover1, soft_cover1, hard_cover2, soft_cover2)
-
-            # if not true_cover1 and not true_cover2:
-            #     if not true_cover_same1 and not true_cover_same2:
-            #         tmp_shape = shape1.intersection(shape2)
-            #         full_area += tmp_shape.area
-            #         # if obj1.type != obj2.type and (obj1.type=="image" or obj2.type=="image") and tmp_shape.area<min(shape1.area, shape2.area):
-            #         #     full_area_s += tmp_shape.area
-            #         #     if tmp_shape.area>0:
-            #         #         print("id", obj1.id, obj2.id, obj1.box, obj2.box)
-            #     else:
-            #         tmp_shape = shape1.intersection(shape2)
-            #         full_area += tmp_shape.area
+            tmp_cover1 = if_cover(obj1, obj2, type=cover_type)
+            tmp_cover2 = if_cover(obj2, obj1, type=cover_type)
+            if allow_same_cover:
+                true_cover1, true_cover2 = tmp_cover1, tmp_cover2
+            else:
+                true_cover1 = (tmp_cover1 == 1 and obj1.type != "text" and obj1.type != obj2.type)
+                true_cover2 = (tmp_cover2 == 1 and obj2.type != "text" and obj1.type != obj2.type)
 
             if not isinstance(shape1, Mask):
                 tmp_shape = shape1.intersection(shape2)
@@ -458,30 +443,34 @@ def getFullOverlapScore(obj_list, overlap_store=None):
             else:
                 tmp_shape = shape1.intersection(shape2, need_bounds=False)
                 mask_intersect = tmp_shape.area / (shape1.union(shape2, need_bounds=False).area+0.00001)
-            
+
             if mask_intersect > 0:
                 mask_intersect = 1 / (1 + np.exp(-20 * (mask_intersect - 0.5)))
-            # if not tmp_shape.area<min(shape1.area, shape2.area):
+            if (obj1.type == 'chart' and obj2.type in ['sub-element']) or \
+               (obj2.type == 'chart' and obj1.type in ['sub-element']):
+                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+                continue
+            if ('mark' in obj1.type and obj2.type in ['sub-element']) or \
+               ('mark' in obj2.type and obj1.type in ['sub-element']):
+                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+                continue
+            # if true_cover1 or true_cover2:
+            if (true_cover1 and (obj1.type!="HRO" or obj2.type!="mark")) or (true_cover2 and (obj1.type!="mark" or obj2.type!="HRO")):
+                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+                continue
+            # if (tmp_cover1 and obj2.type in ['HRO']) or \
+            #    (tmp_cover2 and obj1.type in ['HRO']):
             #     overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
             #     continue
-            if (obj1.type == 'chart' and obj2.type in ['axis','marks']) or \
-               (obj2.type == 'chart' and obj1.type in ['axis','marks']):
+            # if (tmp_cover1 and 'mark' in obj2.type) or \
+            #    (tmp_cover2 and 'mark' in obj1.type):
+            #     overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+            #     continue
+            if ('gridline' in obj1.type) or ('gridline' in obj2.type):
                 overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
                 continue
-            if (hard_cover1 and obj1.type not in ['text','legend'] and obj2.type in ['visual_element']) or \
-               (hard_cover2 and obj2.type not in ['text','legend'] and obj1.type in ['visual_element']):
-                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
-                continue
-            if obj1.type in ['axis','marks','text'] and obj2.type in ['axis','marks','text']:
-                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = mask_intersect * 3
-                full_area += mask_intersect * 3
-            elif (hard_cover1 and obj1.type == 'legend' and obj2.type in ['chart', 'axis', 'text', 'marks']) or \
-                 (hard_cover2 and obj2.type == 'legend' and obj1.type in ['chart', 'axis', 'text', 'marks']):
-                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = mask_intersect * 2
-                full_area += mask_intersect * 2
-            else:
-                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = mask_intersect
-                full_area += mask_intersect
+            overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = mask_intersect
+            full_area += mask_intersect
 
     width = max(0, max_x - min_x)
     height = max(0, max_y - min_y)
@@ -555,7 +544,7 @@ def getFullOverlapScoreBase(obj_list, overlap_store=None, cover_type="soft", all
     return full_area, 1
 
 
-def getFullOverlapScoreBase2(obj_list, overlap_store=None, cover_type="soft", allow_same_cover=False):
+def getFullOverlapScoreNew(obj_list, overlap_store=None):
     full_area = 0
     # full_area_s = 0
     min_x, min_y, max_x, max_y = 10000000, 10000000, -10000000, -10000000
@@ -581,13 +570,10 @@ def getFullOverlapScoreBase2(obj_list, overlap_store=None, cover_type="soft", al
             # shape2 = shapely.geometry.box(obj2.box[0], obj2.box[1], obj2.box[2], obj2.box[3])
             # shape2 = obj2.mask_shape
             shape2 = obj2.mask_obj
-            tmp_cover1 = if_cover(obj1, obj2, type=cover_type)
-            tmp_cover2 = if_cover(obj2, obj1, type=cover_type)
-            if allow_same_cover:
-                true_cover1, true_cover2 = tmp_cover1, tmp_cover2
-            else:
-                true_cover1 = (tmp_cover1 == 1 and obj1.type != obj2.type)
-                true_cover2 = (tmp_cover2 == 1 and obj1.type != obj2.type)
+            hard_cover1, soft_cover1 = if_cover(obj1, obj2, type='both')
+            hard_cover2, soft_cover2 = if_cover(obj2, obj1, type='both')
+            true_cover1 = (hard_cover1 == 1 and obj1.type != obj2.type)
+            true_cover2 = (hard_cover2 == 1 and obj1.type != obj2.type)
 
             if not isinstance(shape1, Mask):
                 tmp_shape = shape1.intersection(shape2)
@@ -598,14 +584,31 @@ def getFullOverlapScoreBase2(obj_list, overlap_store=None, cover_type="soft", al
 
             if mask_intersect > 0:
                 mask_intersect = 1 / (1 + np.exp(-20 * (mask_intersect - 0.5)))
-
-            # if not tmp_shape.area<min(shape1.area, shape2.area):
-            #     overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
-            #     continue
+            # if mask_intersect > 0:
+            #     if mask_intersect > 0.5:
+            #         mask_intersect = 100
+            #     else:
+            #         mask_intersect = 0
 
             if true_cover1 or true_cover2:
                 overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
                 continue
+            if (hard_cover1 and obj2.type in ['visual_element']) or \
+               (hard_cover2 and obj1.type in ['visual_element']):
+                overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+                continue
+
+
+            # if (true_cover1 and obj2.type in ['visual_element']) or \
+            #    (true_cover2 and obj1.type in ['visual_element']):
+            #     overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+            #     continue
+
+
+            # if hard_cover1 or hard_cover2:
+            #     overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = 0
+            #     continue
+
             overlap_store[(id1, id2)] = overlap_store[(id2, id1)] = mask_intersect
             full_area += mask_intersect
 
@@ -620,31 +623,35 @@ def getFullOverlapScoreBase2(obj_list, overlap_store=None, cover_type="soft", al
 
 
 def getFullScore2(hierarchy, obj_list, weight_store=None, match_store=None, shape_store=None, overlap_store=None, adjust=True, img_shape=None):
-    # print('start get score')
 
-    # start = time.time()
-    getShape(hierarchy, shape_store=shape_store)
-    # print("shape time", time.time()-start)
+    if hierarchy is not None:
+        # print('start get score')
 
-    # full_score = getFullScore(hierarchy)
-    # start = time.time()
-    full_score = getFullScore(hierarchy, weight_store=weight_store, match_store=match_store, shape_store=shape_store, img_shape=img_shape)
-    # print("cover time", time.time()-start)
+        # start = time.time()
+        getShape(hierarchy, shape_store=shape_store)
+        # print("shape time", time.time()-start)
 
-    # print(time.time()-start)
+        # full_score = getFullScore(hierarchy)
+        # start = time.time()
+        full_score = getFullScore(hierarchy, weight_store=weight_store, match_store=match_store, shape_store=shape_store, img_shape=img_shape)
+        # print("cover time", time.time()-start)
 
-    # if adjust:
-    #     # print('start adjust')
+        # print(time.time()-start)
 
-    #     hierarchy = adjust_hierarchy(hierarchy, full_score, None, weight_store=weight_store, match_store=match_store, shape_store=shape_store)
-    #     # full_score = getFullScore(hierarchy, weight_store=weight_store, match_store=match_store, shape_store=shape_store) 
+        # if adjust:
+        #     # print('start adjust')
 
-    #     # print('end adjust')
+        #     hierarchy = adjust_hierarchy(hierarchy, full_score, None, weight_store=weight_store, match_store=match_store, shape_store=shape_store)
+        #     # full_score = getFullScore(hierarchy, weight_store=weight_store, match_store=match_store, shape_store=shape_store) 
+
+        #     # print('end adjust')
+    else:
+        full_score = np.array([0, 1, 0, 0, 0, 1])
     
     # start = time.time()
-    # full_score[2], full_score[3] = getFullOverlapScore(obj_list, overlap_store=overlap_store)
+    full_score[2], full_score[3] = getFullOverlapScore(obj_list, overlap_store=overlap_store, cover_type="hard")
     # full_score[2], full_score[3] = getFullOverlapScoreBase(obj_list, overlap_store=overlap_store, cover_type="hard")
-    full_score[2], full_score[3] = getFullOverlapScoreBase2(obj_list, overlap_store=overlap_store, cover_type="hard")
+    # full_score[2], full_score[3] = getFullOverlapScoreNew(obj_list, overlap_store=overlap_store)
     # print("overlap time", time.time()-start)
 
     return full_score
@@ -765,16 +772,29 @@ def eval_hierarchy(dict_list, input_image=None, scale=1, line=1, padding=10, sho
         obj1 = obj_list[i]
         for j in range(i+1, len(obj_list)):
             obj2 = obj_list[j]
-            if obj1.type == 'text' and obj2.type == 'text':
-                cover1 = if_cover(obj1, obj2, type='very_hard')
-                cover2 = if_cover(obj2, obj1, type='very_hard')
-                if cover1:
-                    obj2.hide = True
-                if cover2:
-                    obj1.hide = True
+            # if obj1.type == 'text' and obj2.type == 'text':
+            #     cover1 = if_cover(obj1, obj2, type='very_hard')
+            #     cover2 = if_cover(obj2, obj1, type='very_hard')
+            #     if cover1:
+            #         obj2.hide = True
+            #     if cover2:
+            #         obj1.hide = True
 
     # print('start merge')
     hierarchy_list = hierarchy_merge(obj_list)
+
+    # obj_list2 = [obj for obj in obj_list if "mark" in obj.type.lower() and "gridline" not in obj.type.lower()]  # 去除掉本质上没有面积的元素、难以处理的元素
+    # obj_list2 = [obj for obj in obj_list if obj.type.lower() not in ["text"] and "gridline" not in obj.type.lower()]  # 去除掉本质上没有面积的元素、难以处理的元素
+    obj_list2 = [obj for obj in obj_list if "gridline" not in obj.type.lower()]  # 去除掉本质上没有面积的元素、难以处理的元素
+    # obj_list2 = [obj for obj in obj_list if obj.type.lower() not in ["mark", "line_mark", "radar_mark", "bump_mark", "sankey_mark", "text"] and "gridline" not in obj.type.lower()]  # 去除掉本质上没有面积的元素、难以处理的元素
+
+    if len(obj_list) != len(obj_list2):
+        hierarchy_list2 = hierarchy_merge(obj_list2)
+        if len(hierarchy_list2) == 0:
+            hierarchy_list2 = [None]*len(hierarchy_list)
+    else:
+        hierarchy_list2 = hierarchy_list
+
     # print('end merge')
 
     # print("hierarchy time", len(obj_list), time.time()-start)
@@ -816,10 +836,13 @@ def eval_hierarchy(dict_list, input_image=None, scale=1, line=1, padding=10, sho
         draw = ImageDraw.Draw(image)
 
     full_score = np.zeros(6)
-    for hierarchy in hierarchy_list:
+    for i in range(len(hierarchy_list)):
         start = time.time()
 
-        full_score = getFullScore2(hierarchy, obj_list, weight_store=weight_store, match_store=match_store, shape_store=shape_store, overlap_store=overlap_store, adjust=adjust, img_shape=img_shape)
+        hierarchy = hierarchy_list[i]
+        hierarchy2 = hierarchy_list2[i]
+
+        full_score = getFullScore2(hierarchy2, obj_list, weight_store=weight_store, match_store=match_store, shape_store=shape_store, overlap_store=overlap_store, adjust=adjust, img_shape=img_shape)
 
         # print("score time", time.time()-start)
         if "score_time" not in tot_time:
@@ -1176,11 +1199,12 @@ def updateBox2(obj):
     obj.box2 = [min_x, min_y, max_x, max_y]
 
 
-def getObjHierarchy(hierarchy_json, boxes_json, with_text=True):
+def getObjHierarchy(hierarchy_json, boxes_json, with_text=True, use_type="class"):
     def getGroupFrom(box_json, id):
         new_obj = Group()
         new_obj.box = [box_json["x"], box_json["y"], box_json["x"]+box_json["width"], box_json["y"]+box_json["height"]]
-        new_obj.type = box_json["class"]
+        new_obj.type = box_json[use_type]
+        new_obj.base_type = box_json["class"]
         new_obj.id = id
         if "unselected" in box_json and box_json["unselected"]:
             new_obj.hide = True
@@ -1191,7 +1215,7 @@ def getObjHierarchy(hierarchy_json, boxes_json, with_text=True):
             return None
         return getGroupFrom(boxes_json[0], 0)
     if isinstance(hierarchy_json, int):
-        if not with_text and boxes_json[hierarchy_json]["class"] == "text":
+        if not with_text and boxes_json[hierarchy_json]["super_class"] == "text":
             return None
         return getGroupFrom(boxes_json[hierarchy_json], hierarchy_json)
 
@@ -1202,7 +1226,7 @@ def getObjHierarchy(hierarchy_json, boxes_json, with_text=True):
     max_y = -10000000
     hide_flag = True
     for child in hierarchy_json["children"]:
-        child_obj = getObjHierarchy(child, boxes_json, with_text=with_text)
+        child_obj = getObjHierarchy(child, boxes_json, with_text=with_text, use_type=use_type)
 
         if child_obj is None:
             continue
@@ -1226,11 +1250,12 @@ def getObjHierarchy(hierarchy_json, boxes_json, with_text=True):
     
     new_obj.box = [min_x, min_y, max_x, max_y]
     new_obj.type = 'group'
+    new_obj.base_type = 'group'
 
     return new_obj
 
 
-def getCrossObjSimilarity(obj1, obj2, full_obj1, full_obj2):
+def getCrossObjSimilarity(obj1, obj2, full_obj1, full_obj2, type='soft'):
     if obj1 is None or obj2 is None:
         return 0
 
@@ -1243,6 +1268,12 @@ def getCrossObjSimilarity(obj1, obj2, full_obj1, full_obj2):
     height2 = (obj2.box[3] - obj2.box[1]) / (full_obj2.box[3] - full_obj2.box[1])
 
     similarity = 1 - max(abs(width1-width2), abs(height1-height2))
+
+    if type == 'hard':
+        if width2 > width1*4 or width1 > width2*4 or height2 > height1*4 or height1 > height2*4:
+            return 0
+        if width2*height1 > width1*height2*2 or width1*height2 > width2*height1*2:
+            return 0
 
     if similarity > 0.8:
         return 1
@@ -1269,8 +1300,6 @@ def getCrossGroupSimilarity(basic_obj1, basic_obj2, full_obj1, full_obj2):
     for i in range(len(basic_obj1)):
         for j in range(len(basic_obj2)):
             mtx[i][j] = getCrossObjSimilarity(basic_obj1[i], basic_obj2[j], full_obj1, full_obj2)
-            # if basic_obj1[i].type == "data_element" and basic_obj2[j].type == "data_element":
-            #     print(mtx[i][j], basic_obj1[i].box, basic_obj2[j].box, full_obj1.box, full_obj2.box)
     row_ind, col_ind = linear_sum_assignment(-mtx)
     match = mtx[row_ind, col_ind].sum()
     # print("match", match)
@@ -1290,7 +1319,7 @@ def getAllBasicObj(obj):
     return all_obj_list
 
 
-def getBestSimilarity(now_obj, source_hierarchy, source_obj, store=None, show=False):
+def getBestSimilarity(now_obj, source_hierarchy, source_obj, store=None, cover_store_source=None, cover_store_now=None, show=False):
     if now_obj.type != source_obj.type:
         return 0 
 
@@ -1298,7 +1327,15 @@ def getBestSimilarity(now_obj, source_hierarchy, source_obj, store=None, show=Fa
     # if source_obj not in source_obj_list:
     #     source_obj_list.append(source_obj)
     source_all_obj_list = getAllBasicObj(source_hierarchy)
-    one_cover_all, source_one = ifOneCoverAll(source_all_obj_list)
+
+    if cover_store_source is not None and source_hierarchy in cover_store_source:
+        one_cover_all, source_one = cover_store_source[source_hierarchy]
+    else:
+        one_cover_all, source_one = ifOneCoverAll(source_all_obj_list)
+    if cover_store_source is not None:
+        cover_store_source[source_hierarchy] = (one_cover_all, source_one)
+    
+    source_obj_list = [obj for obj in source_obj_list if obj.base_type not in ["Annotation", "Title", "Source", "gridline", "mark"]]   # text mark不计数
 
     if show:
         print("source one cover all", len(source_all_obj_list), one_cover_all)
@@ -1311,6 +1348,8 @@ def getBestSimilarity(now_obj, source_hierarchy, source_obj, store=None, show=Fa
         # if now_obj not in now_obj_list:
         #     now_obj_list.append(now_obj)
 
+        now_obj_list = [obj for obj in now_obj_list if obj.base_type not in ["Annotation", "Title", "Source", "gridline", "mark"]]   # text mark不计数
+
         if len(now_obj_list) >= 3*len(source_obj_list):
             return 0
         
@@ -1318,13 +1357,18 @@ def getBestSimilarity(now_obj, source_hierarchy, source_obj, store=None, show=Fa
             print("compare", len(source_obj_list), len(now_obj_list))
             print("now hierarchy", now_hierarchy)
 
-        if getCrossObjSimilarity(now_obj, source_obj, now_hierarchy, source_hierarchy):
+        if getCrossObjSimilarity(now_obj, source_obj, now_hierarchy, source_hierarchy, 'hard'):
             if (store is not None) and ((now_hierarchy, source_hierarchy) in store):
                 score = store[(now_hierarchy, source_hierarchy)]
             else:
                 score = getCrossGroupSimilarity(now_obj_list, source_obj_list, now_hierarchy, source_hierarchy)
                 if one_cover_all:
-                    now_one_cover_all, now_one = ifOneCoverAll(now_all_obj_list)
+                    if cover_store_now is not None and now_hierarchy in cover_store_now:
+                        now_one_cover_all, now_one = cover_store_now[now_hierarchy]
+                    else:
+                        now_one_cover_all, now_one = ifOneCoverAll(now_all_obj_list)
+                    if cover_store_now is not None:
+                        cover_store_now[now_hierarchy] = (now_one_cover_all, now_one)
                     
                     if show:
                         print("target one cover all", len(now_all_obj_list), now_one_cover_all)
@@ -1422,6 +1466,7 @@ def getObjContext(now_obj):
         flag = False
 
         now_obj_list = getBasicObj(now_hierarchy)
+        now_obj_list = [obj for obj in now_obj_list if obj.base_type not in ["Annotation", "Title", "Source", "gridline", "mark"]]   # text mark不计数
         if now_obj not in now_obj_list:
             now_obj_list.append(now_obj)
         if len(now_obj_list) >= 2:

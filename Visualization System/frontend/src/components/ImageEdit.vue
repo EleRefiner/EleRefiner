@@ -7,7 +7,7 @@
 <!--        </div>-->
         <p class="sub-title" style="color: #4e4e4e;">Infographic</p>
         <div class="sample-panel-content">
-            <div style="width: 52.5%; height: calc(100% - 45px); margin-top: 15px; display: inline-block;">
+            <div style="width: 52.5%; height: calc(100% - 25px); margin-top: 10px; display: inline-block;">
                 <TreeView
                     ref="child_tree"
                     :item="item"
@@ -260,7 +260,7 @@ export default {
             map_info: null,
             can_prop: false,
             prop_showed: false,
-            show_QA: true,
+            show_QA: false,
             QA_question: "",
             QA_answer: "",
             QA_reply: "",
@@ -1631,6 +1631,10 @@ export default {
                     if(!d.ispred)return "visible";
                     return "hidden";
                 })
+                // .attr("opacity", (d) => {
+                //     if(!d.ispred)return 1;
+                //     return 0;
+                // })
                 .each(function() {
                     // eslint-disable-next-line no-invalid-this
                     const circleG = d3.select(this);
@@ -2203,8 +2207,8 @@ export default {
 
 .ImageInlineBlock {
     width: 47.5%;
-    height: calc(100% - 45px);
-    margin-top: 15px;
+    height: calc(100% - 25px);
+    margin-top: 10px;
 }
 
 .ImageFlex {
@@ -2221,9 +2225,9 @@ export default {
     display: none;
     flex-direction: column;
     height: calc(41.7% - 1.2vh);
-    width: calc(100% - 45px);
-    margin-left: 15px;
-    margin-right: 30px;
+    width: calc(100% - 15px);
+    margin-left: 5px;
+    margin-right: 10px;
     margin-bottom: 1.2vh;
     position: relative;
 }
@@ -2308,9 +2312,9 @@ export default {
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: calc(100% - 45px);
-    margin-left: 15px;
-    margin-right: 30px;
+    width: calc(100% - 15px);
+    margin-left: 5px;
+    margin-right: 10px;
     /* border: 2px solid #aaa; */
     background-color: rgb(255, 255, 255);
     border-radius: 10px;
@@ -2509,9 +2513,9 @@ export default {
 }
 
 #control-tree2 {
-    width: calc(100% - 45px);
-    margin-left: 15px;
-    margin-right: 30px;
+    width: calc(100% - 15px);
+    margin-left: 5px;
+    margin-right: 10px;
     height: 60px;
     display: flex;
 }
