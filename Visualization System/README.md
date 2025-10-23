@@ -26,9 +26,11 @@ python setup.py build_ext --inplace    (For MSVC environment in Windows, please 
 ```
 Then move the compiled files (such as .pyd or .so) to backend/data/scene_tree/.
 
+Please download and install [segment_anything](https://github.com/facebookresearch/segment-anything) and motify the "YOU/SAM/MODEL/PATH" in backend/data/scene_tree/SAM/sam.py
+
 \
 Clip and Dreamsim:
-Please download and install [Clip](https://github.com/openai/CLIP) and [Dreamsim](https://github.com/ssundaram21/dreamsim) and motify the "YOUR/DREAMSIM/CACHE/FOLDER" in backend/data/feature/dreamsim.py
+Please download and install [Clip](https://github.com/openai/CLIP) and [Dreamsim](https://github.com/ssundaram21/dreamsim), and motify the "YOUR/DREAMSIM/CACHE/FOLDER" in backend/data/feature/dreamsim.py
 
 If you encounter issues while compiling, please try adjusting the line endings to LF or CRLF according to your system environment.
 
