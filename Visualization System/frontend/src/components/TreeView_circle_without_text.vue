@@ -2145,7 +2145,8 @@ export default {
             id_cnt = 10000;
             function dfs(hierarchy, deep) {
                 if(typeof hierarchy === 'number') {
-                    if(["text", "Annotation", "Title", "Source"].includes(boxes[hierarchy].class))return null;
+                    // if(["text", "Annotation", "Title", "Source"].includes(boxes[hierarchy].class))return null;
+                    if(!that.show_node[that.categories_dict[boxes[hierarchy].class].super]["show"])return null;
 
                     boxes[hierarchy].deep = deep;
                     let category_cnt = {};
@@ -2295,8 +2296,14 @@ export default {
 
             let color_legend_svgsize = that.color_legend_svg.node().getBoundingClientRect();
             let stroke_width = 0;
+            let check_stroke_width = 1;
             let legend_size = 20;
             legend_size = min(min(20, color_legend_svgsize.height/3), color_legend_svgsize.width/17);
+
+            that.show_node = {};
+            for(let i=0;i<that.categories_super.length;i++) {
+                that.show_node[that.categories_super[i]["text"]] = that.categories_super[i];
+            }
 
             for(let i=0;i<that.categories_super.length;i++) {
                 that.categories_super[i].tree_y = i/(that.categories_super.length-1)*(color_legend_svgsize.height - stroke_width - legend_size);
@@ -2306,8 +2313,41 @@ export default {
                 .enter().append("g")
                 .attr("class", "legend")
                 .attr("transform", (d, i) => `translate(0, ${d.tree_y})`);
+
+            const group = legend.append("g");
+            group.append("rect")
+                .attr("x", check_stroke_width/2)
+                .attr("y", legend_size-1/3*legend_size-legend_size*3/5/2)
+                .attr("class", "box")
+                .attr("width", legend_size*3/5)
+                .attr("height", legend_size*3/5)
+                .attr("rx", legend_size*3/20)
+                .attr("ry", legend_size*3/20)
+                .attr("fill", "white")
+                .attr("stroke", "#444")
+                .attr("stroke-width", check_stroke_width);
+            const check = group.append("path")
+                .attr("class", "check")
+                .attr("transform", function(d) {
+                    let tmp = legend_size*3/5;
+                    return `scale(${tmp/1024}) translate(${(check_stroke_width/2)/(legend_size*3/5)*1024}, ${(legend_size-1/3*legend_size-legend_size*3/5/2)/(legend_size*3/5)*1024})`;
+                })
+                .attr("d", "M479.287 761.117c-28.762 28.039-75.489 28.039-104.251 0l-234.739-229.703c-28.762-28.039-28.762-74.052 0-102.087s75.489-28.039 104.251 0l182.615 178.658 351.927-344.736c28.762-28.039 75.489-28.039 104.251 0s28.762 74.052 0 102.087l-404.048 395.781z")
+                .attr("stroke", "#0074D9")
+                .attr("stroke-width", check_stroke_width)
+                .attr("stroke-linecap", "round")
+                .attr("stroke-linejoin", "round")
+                .style("display", d => that.show_node[d.text]["show"] ? null : "none");
+            group.on("click", function(event, d) {
+                that.show_node[d.text]["show"] = !that.show_node[d.text]["show"];
+                d3.select(this)
+                    .select(".check")
+                    .style("display", d2 => that.show_node[d2.text]["show"] ? null : "none");
+                that.load(that.item);
+            });
+
             legend.append("circle")
-                .attr("cx", (stroke_width+legend_size)*1/3)
+                .attr("cx", (stroke_width+legend_size)*1/3 + 1*legend_size)
                 .attr("cy", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
                 .attr("r", legend_size*1/3)
                 .attr("fill", d => d.color)
@@ -2315,7 +2355,7 @@ export default {
                 .attr("stroke", d => d.color)
                 .attr("opacity", 0.9);
             legend.append("circle")
-                .attr("cx", (stroke_width+legend_size)*1/3 + legend_size)
+                .attr("cx", (stroke_width+legend_size)*1/3 + legend_size + 1*legend_size)
                 .attr("cy", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
                 .attr("r", legend_size*1/3)
                 .attr("fill", d => d.color)
@@ -2323,7 +2363,7 @@ export default {
                 .attr("stroke", d => d.color)
                 .attr("opacity", 0.5);
             legend.append("text")
-                .attr("x", stroke_width/2 + 2*legend_size)
+                .attr("x", stroke_width/2 + 2*legend_size + 1*legend_size)
                 .attr("y", stroke_width+legend_size-1/3*legend_size-stroke_width/2)
                 .attr("dy", '.35em')
                 .text(d => "Selected / Unselected "+d.text)
@@ -2399,7 +2439,7 @@ export default {
                 .append("path")
                 .attr("class", "sector")
                 .attr("fill", function(d2) {
-                    let cls = Object.keys(that.categories_dict)[0];
+                    let cls = Object.keys(that.categories_dict)[Object.keys(that.categories_dict).length-1];
                     let color = d3.color(that.categories_dict[cls]["color"]);
                     color.opacity = 0.9;
                     let tmp_thres = that.thres;
@@ -2511,7 +2551,7 @@ export default {
             new_legend_sector_g.append("circle")
                 .attr("class", "sector_circle")
                 .attr("fill", function(d2) {
-                    let cls = Object.keys(that.categories_dict)[0];
+                    let cls = Object.keys(that.categories_dict)[Object.keys(that.categories_dict).length-1];
                     let color = d3.color(that.categories_dict[cls]["color"]);
                     color.opacity = 0.9;
                     let tmp_thres = that.thres;
@@ -2625,12 +2665,8 @@ export default {
                 .attr("text-anchor", "start")
                 .text(d => d.text)
                 .attr("font-size", legend_font_size);
-        }
-    },
-    computed: {
-    },
-    watch: {
-        item: function(item) {
+        },
+        load(item) {
             this.click_id = -1;
             this.click_parent_id = -1;
             this.focus_id = -1;
@@ -2639,6 +2675,13 @@ export default {
 
             this.$parent.$parent.wait_cnt += 1;
             console.log("tree add wait cnt", this.$parent.$parent.wait_cnt);
+        }
+    },
+    computed: {
+    },
+    watch: {
+        item: function(item) {
+            this.load(item);
         }
     },
     mounted() {
