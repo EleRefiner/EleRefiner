@@ -521,6 +521,11 @@ export default {
             let that = this;
             that.addOnLoadingFlag();
             console.log("fetch data");
+            if(that.selectedInfluence != null) {
+                for(let key in that.selectedInfluence) {
+                    that.selectedInfluence[key]["checked"] = false;
+                }
+            }
             return axios.post(`${this.backend_url}/api/data_ids`, {ids})
                 .then(response => {
                     that.decOnLoadingFlag();
